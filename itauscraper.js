@@ -5,6 +5,8 @@ const path = require('path')
 const { v4: uuid } = require('uuid')
 const moment = require('moment')
 const os = require('os')
+const utils = require('./utils');
+const db = require('./banco-de-dados');
 
 const stepLogin = async (page, options) => {
   // Open homepage and fill account info
@@ -34,6 +36,73 @@ const stepLogin = async (page, options) => {
   page.click('#acessar', keyClickOption)
   await page.waitForSelector('#sectionHomePessoaFisica')
   console.log('Logged!')
+}
+
+const stepFatura = async (page, options) => {
+  console.log('Abrindo fatura...');
+
+  //abrindo menu
+  await page.evaluate(() => { document.querySelector('.sub-mnu').style.display = 'block' })
+  await page.waitForTimeout(1000)
+
+  //clicar no meu fatura
+  await page.evaluate(() => {
+    const xpath = "//*[@id='person']/header/div[3]/nav/ul/li/div/div/div[2]/ul[2]/li[2]/a";
+    const result = document.evaluate(xpath, document, null, XPathResult.ANY_TYPE, null) // eslint-disable-line
+    result.iterateNext().click()
+  })
+  console.log('Entrou na tela de faturas')
+
+  //fechar menu
+  console.log('fechando menu...')
+  await page.evaluate(() => { document.querySelector('.sub-mnu').style.display = 'none' })
+
+  //pegando os lançamentos no cartao1
+  // await page.evaluate(() => { 
+  //   const trs = Array.from(document.querySelectorAll("table[summary='lançamentos nacionais titular WILLIANS MARTINS DE MORAES - final 9457'] tr.linha-valor-total"))
+  //   console.info("Encontrei " + trs.length + " lançamentos.")
+  // })
+  await page.waitForTimeout(3000)
+  console.log('buscando lista de lançamentos...')
+  
+  // const rows = await page.$$("table[summary='lançamentos nacionais titular WILLIANS MARTINS DE MORAES - final 9457'] tr.linha-valor-total");
+  
+  
+  
+  // for (let i = 0; i < rows.length; i++) {
+    //   // const element = await (await elementos[i].getProperty('innerText')).jsonValue();
+    //   // console.log(element);
+    //   Array.from(rows, row => {
+      //     const columns = row.querySelectorAll('td');
+      //     return Array.from(columns, column => column.innerText);
+      //   });
+      //   var data = element
+      // }
+      
+  const result = await page.evaluate(() => {
+    var seletor = "table[summary='lançamentos nacionais titular WILLIANS MARTINS DE MORAES - final 9457'] tr.linha-valor-total";
+    const rows = document.querySelectorAll(seletor);
+    console.log("Encontrei " + rows.length + " rows")
+    
+    
+    return Array.from(rows, row => {
+      const columns = row.querySelectorAll('td');
+      return Array.from(columns, column => column.innerText);
+    });
+  });
+  
+  console.log("Encontrei " + result.length + " lançamentos.")
+
+  for (let index = 0; index < result.length; index++) {
+    let data = result[index][0];
+    let descricao = result[index][1];
+    let valor = result[index][2];
+
+    console.log(utils.dataExtensaParaBancoDeDados(data));
+    console.log(descricao);
+    console.log(valor);
+    console.log("---"); 
+  }
 }
 
 const stepExport = async (page, options) => {
@@ -171,9 +240,14 @@ const scraper = async (options) => {
 
   await stepLogin(page, options)
   await stepClosePossiblePopup(page)
-  await stepExport(page, options)
+  await stepFatura(page, options)
+  // await stepExport(page, options)
 
-  await browser.close()
+  // db.conectar();
+  // db.salvar('2022-01-26', 'dddd', 123.45);
+
+  //await browser.close()
+
 
   console.log('Itaú scraper finished.')
 }
