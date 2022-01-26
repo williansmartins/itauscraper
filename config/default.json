@@ -1,6 +1,6 @@
 {
   "puppeteer": {
-    "headless": true,
+    "headless": false,
     "devtools": false,
     "timeout": 600000
   },

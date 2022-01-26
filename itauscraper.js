@@ -37,13 +37,16 @@ const stepLogin = async (page, options) => {
 }
 
 const stepExport = async (page, options) => {
+  try {
+    
+  
   console.log('Opening statement page...')
   // Go to extrato page
   await page.evaluate(() => { document.querySelector('.sub-mnu').style.display = 'block' })
   await page.waitFor(1000)
 
-  await page.hover('#varejo > header > div.container > nav > ul > li > div > div > div:nth-child(1) > ul:nth-child(1) > li:nth-child(2) > a')
-  await page.click('#varejo > header > div.container > nav > ul > li > div > div > div:nth-child(1) > ul:nth-child(1) > li:nth-child(2) > a')
+  //await page.hover('#varejo > header > div.container > nav > ul > li > div > div > div:nth-child(1) > ul:nth-child(1) > li:nth-child(2) > a')
+  //await page.click('#varejo > header > div.container > nav > ul > li > div > div > div:nth-child(1) > ul:nth-child(1) > li:nth-child(2) > a')
   console.log('Statement page loaded.')
 
   // Close guide
@@ -56,8 +59,8 @@ const stepExport = async (page, options) => {
   console.log('Menu has been closed')
 
   // Select transactions tab
-  await page.click('#btn-aba-lancamentos')
-  console.log('Selected transactions tab')
+  // await page.click('#btn-aba-lancamentos')
+  // console.log('Selected transactions tab')
 
   // Select all entries on the filters
   await page.click('#extrato-filtro-lancamentos .todas-filtro-extrato-pf')
@@ -88,18 +91,23 @@ const stepExport = async (page, options) => {
   const finalFilePathWithExtension = download(page, triggerDownload, finalFilePath, options)
   console.log('Download has been finished.')
   console.log('Export document final path: ', finalFilePathWithExtension)
+  } catch (error) {
+   console.error("OPS");   
+  }
 }
 
 const stepCloseStatementGuide = async (page) => {
-  await page.waitForSelector('.feature-discovery-extrato button.hopscotch-cta', { timeout: 4000 })
-    .then(() => page.click('.feature-discovery-extrato button.hopscotch-cta')) // eslint-disable-line
+  await page.waitForSelector('.close-btn-H2O', { timeout: 4000 })
+    .then(() => page.click('.close-btn-H2O')) // eslint-disable-line
     .catch(() => {})
 }
 
 const stepClosePossiblePopup = async (page) => {
-  await page.waitForSelector('div.mfp-wrap', { timeout: 4000 })
+  await page.waitForSelector('.close-btn-H2O', { timeout: 4000 })
     .then(() => page.evaluate(() => popFechar())) // eslint-disable-line
-    .catch(() => {})
+    .catch(() => {
+      console.error("erro ")
+    })
 }
 
 const mapPasswordKeys = async (page) => {
@@ -152,6 +160,88 @@ const waitForFileToDownload = async (downloadPath) => {
   return filename
 }
 
+const passoExtra = async( page ) => {
+  // await page.waitFor('#input-busca')
+  // page.type('#input-busca', "fatura");
+  // page.type('#input-busca', "fatura");
+  // page.type('#input-busca', "fatura");
+  // page.type('#input-busca', "fatura");
+  // page.type('#input-busca', "fatura");
+  
+  // var seletor = "#cartao-card-accordion";
+  // var seletor = ".close-btn-H20";
+  
+  //chama funcao que fechao modal
+  var seletor = "#overlayPopupH2OID";
+  await page.waitForSelector(seletor, { timeout: 4000 })
+    .then(() => page.evaluate(() => window.top._closeModalH2o('/21672839401/PF_HOME_POPUP_02'))) // eslint-disable-line
+    .catch(() => {
+      console.error("erro ")
+    })
+  
+  var seletor = "#input-busca";
+  await page.waitForSelector(seletor, { timeout: 4000 })
+    .then(() => {
+      // page.type('#input-busca', "fatura");
+      // page.waitFor(1000);
+      // page.type('#input-busca', "fatura2");
+      page.evaluate(() => barraBuscaController.iniciarCartaoRapido());
+
+      seletor = ".cartoes.clear";
+      page.waitForSelector(seletor, { timeout: 4000 })
+      .then(async () => {
+        console.info("encontrou o seletor: " + seletor);
+        await page.waitFor(1000);
+
+        page.click(seletor);
+      }) // eslint-disable-line
+      .catch(() => {
+        console.error("erro ")
+      })  
+
+    })
+    .catch(() => {
+      console.error("erro ")
+    })
+
+    
+
+    
+  // 
+
+  //menu
+  // seletor = ".btn-nav btn-menu";
+  // await page.waitForSelector(seletor, { timeout: 8000 })
+  //   .then(() => page.click(seletor)) // eslint-disable-line
+  //   .catch((e) => {
+  //     console.error("erro " + e)
+  //   })
+
+  //sub menu
+  // seletor = "#person > header > div.container > nav > ul > li > div > div > div:nth-child(2) > ul:nth-child(2) > li:nth-child(2) > a";
+  // await page.waitForSelector(seletor, { timeout: 8000 })
+  //   .then(() => page.click(seletor)) // eslint-disable-line
+  //   .catch((e) => {
+  //     console.error("erro " + e)
+  //   })
+
+    
+
+  
+
+  // for (let cont = 0; cont < 20; cont++) {
+    // await page.waitFor(1000)
+    // console.info("encontrou o seletor: " + seletor);
+    // console.info("iteracao: " + cont);
+    // page.click(seletor);
+
+    
+    //call JS
+    //window.top._closeModalH2o('/21672839401/PF_HOME_POPUP_02')
+  // }
+
+}
+
 const scraper = async (options) => {
   console.log('Starting Itaú scraper...')
   console.log('Account Branch Number:', options.branch)
@@ -167,10 +257,12 @@ const scraper = async (options) => {
   page.setViewport(options.viewport)
 
   await stepLogin(page, options)
-  await stepClosePossiblePopup(page)
-  await stepExport(page, options)
 
-  await browser.close()
+  await passoExtra(page);
+  //await stepClosePossiblePopup(page)
+  //await stepExport(page, options)
+
+  //await browser.close()
 
   console.log('Itaú scraper finished.')
 }
