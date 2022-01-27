@@ -11,8 +11,8 @@ exports.conectar = function (dataString, descricao, valor) {
     conexao.connect(callback);
 };
 
-exports.salvar = function (dataString, descricao, valor) {
-    var sql = "INSERT INTO tb_lancamentos_cartao_credito VALUES (null, '"+dataString+"', '"+descricao+"', "+valor+")";
+exports.salvar = function (dataString, descricao, valor, cartao) {
+    var sql = "INSERT INTO tb_lancamentos_cartao_credito VALUES (null, '"+dataString+"', '"+descricao+"', "+valor+", '"+cartao+"')";
     conexao.query(sql, function (erro, resultado) {
         if (erro) { 
             console.error(erro);

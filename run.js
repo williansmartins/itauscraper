@@ -29,6 +29,12 @@ var argv = require('yargs')
     type: 'number',
     choices: [3, 5, 7, 15, 30, 60, 90]
   })
+  .option('cartao_numero', {
+    alias: 'cc',
+    describe: 'Card number',
+    required: true,
+    type: 'number'
+  })
   .option('file_format', {
     alias: 'f',
     describe: 'File format to export',

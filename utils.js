@@ -33,7 +33,7 @@ mesStringToNumber = function (string) {
             break;
         case 'jun': return 6
             break;
-        case 'jun': return 7
+        case 'jul': return 7
             break;
         case 'ago': return 8
             break;

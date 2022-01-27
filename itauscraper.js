@@ -80,8 +80,13 @@ const stepFatura = async (page, options) => {
       // }
       
   await page.waitForTimeout(3000)
-  const result = await page.evaluate(() => {
-    var seletor = "table[summary='lançamentos nacionais titular WILLIANS MARTINS DE MORAES - final 9457'] tr.linha-valor-total";
+  
+  const result = await page.evaluate( function(options){
+    // console.log(">>>" + options);
+    var seletor = "table[summary*='"+options.cartao_numero+"'] tr.linha-valor-total";
+    // var seletor = "table[summary='lançamentos nacionais adicional NAYARA M DOMINGUES - final 5020'] tr.linha-valor-total";
+
+    
     const rows = document.querySelectorAll(seletor);
     console.log("Encontrei " + rows.length + " rows")
     
@@ -111,7 +116,7 @@ const stepFatura = async (page, options) => {
 
       });
     });
-  });
+  }, options);
   
   console.log("Encontrei " + result.length + " lançamentos.")
   db.conectar();
@@ -127,7 +132,7 @@ const stepFatura = async (page, options) => {
     console.log("---"); 
 
     
-    db.salvar(utils.dataExtensaParaBancoDeDados(data), descricao, valor);
+    db.salvar(utils.dataExtensaParaBancoDeDados(data), descricao, valor, options.cartao_numero);
   }
 }
 
@@ -254,6 +259,7 @@ const scraper = async (options) => {
   console.log('Starting Itaú scraper...')
   console.log('Account Branch Number:', options.branch)
   console.log('Account number:', options.account)
+  console.log('Card number:', options.cartao_numero)
   console.log('Transaction log days:', options.days)
   console.log('File Format:', options.file_format)
 
@@ -266,9 +272,12 @@ const scraper = async (options) => {
 
   await stepLogin(page, options)
   await stepClosePossiblePopup(page)
-  await stepFatura(page, options)
+  try {
+    await stepFatura(page, options)
+  } catch (error) {
+    console.info(error)
+  }
   // await stepExport(page, options)
-
 
   //await browser.close()
 
