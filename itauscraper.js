@@ -79,6 +79,7 @@ const stepFatura = async (page, options) => {
       //   var data = element
       // }
       
+  await page.waitForTimeout(3000)
   const result = await page.evaluate(() => {
     var seletor = "table[summary='lançamentos nacionais titular WILLIANS MARTINS DE MORAES - final 9457'] tr.linha-valor-total";
     const rows = document.querySelectorAll(seletor);
@@ -87,21 +88,46 @@ const stepFatura = async (page, options) => {
     
     return Array.from(rows, row => {
       const columns = row.querySelectorAll('td');
-      return Array.from(columns, column => column.innerText);
+      return Array.from(columns, column => {
+        // console.log(">>>");
+        // console.log(column);
+
+        var spans = column.querySelectorAll('span');
+        console.log(">>>" + spans.length);
+
+        var xxx = "";
+
+        if(spans.length === 3){
+          console.info("aqui");
+          xxx = "-" + spans[2].innerText;
+        }else if(spans.length === 1){
+          xxx = spans[0].innerText;
+        }else{
+          xxx = column.innerText;
+        }
+
+        // return Array.from(spans, span => span.innerText) 
+        return xxx;
+
+      });
     });
   });
   
   console.log("Encontrei " + result.length + " lançamentos.")
+  db.conectar();
 
   for (let index = 0; index < result.length; index++) {
     let data = result[index][0];
     let descricao = result[index][1];
-    let valor = result[index][2];
+    var valor = result[index][2].replace('.', '').replace(',', '.');
 
-    console.log(utils.dataExtensaParaBancoDeDados(data));
+    console.log(utils.dataExtensaParaBancoDeDados(data)); 
     console.log(descricao);
     console.log(valor);
     console.log("---"); 
+
+    
+    db.salvar(utils.dataExtensaParaBancoDeDados(data), descricao, valor);
   }
 }
 
@@ -243,8 +269,6 @@ const scraper = async (options) => {
   await stepFatura(page, options)
   // await stepExport(page, options)
 
-  // db.conectar();
-  // db.salvar('2022-01-26', 'dddd', 123.45);
 
   //await browser.close()
 

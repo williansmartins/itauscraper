@@ -17,7 +17,8 @@ exports.salvar = function (dataString, descricao, valor) {
         if (erro) { 
             console.error(erro);
         }else{
-            console.log(resultado); 
+            console.log("Inserido com sucesso: " + resultado.insertId);
+            // console.log(resultado); 
         }
     });
 };
