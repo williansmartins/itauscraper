@@ -2,9 +2,126 @@ const puppeteer = require('puppeteer')
 const fs = require('fs-extra')
 const mkdirp = require('mkdirp')
 const path = require('path')
-const uuid = require('uuid/v1')
+const { v4: uuid } = require('uuid')
 const moment = require('moment')
 const os = require('os')
+var mysql = require('mysql')
+
+var con = mysql.createConnection({
+  host: "pwms.com.br",
+  user: "controlei-user",
+  password: "controlei-user-123",
+  database: "controlei"
+});
+
+var cont = 0;
+var contIgnorados = 0;
+var bar;
+// var lancamentos2;
+
+var lancamentos = [
+  [ '19/09/2022', 'REND PAGO APLIC AUT APR', '0,01', 'extrato', '' ],
+  [ '19/09/2022', 'FINANC IMOBILIARIO 045', '-4.714,32', 'extrato', '' ],
+  [ '16/09/2022', 'PIX QRS Nelson Alca16/09', '-35,00', 'extrato', '' ],
+  [ '15/09/2022', 'TED 755.1306NETCRACKER T ', '8.000,00', 'extrato', '' ],
+  [ '15/09/2022', 'PIX TRANSF WILLIAN15/09', '-1.000,00', 'extrato', '' ],
+  [ '13/09/2022', 'DA CPFL PIR 10022161988 ', '-181,65', 'extrato', '' ],
+  // [ '13/09/2022', 'PIX TRANSF WILLIAN13/09', '1.000,00', 'extrato', '' ],
+  // [ '12/09/2022', 'REND PAGO APLIC AUT MAIS', '0,05', 'extrato', '' ],
+  // [ '12/09/2022', 'DA CLARO MOVEL 34100712 ', '-56,98', 'extrato', '' ],
+  // [ '12/09/2022', 'DA AGUA ARAÇOIABA 78059 ', '-72,62', 'extrato', '' ],
+  // [ '12/09/2022', 'PIX TRANSF KLEBER 12/09', '-120,00', 'extrato', '' ],
+  // [ '12/09/2022', 'INT PAG TIT BANCO 237', '-99,90', 'extrato', '' ],
+  // [ '12/09/2022', 'INT PAG TIT 109000117954 ', '-1.249,99', 'extrato', '' ],
+  // [ '12/09/2022', 'INT PAG TIT 109000117434 ', '-1.249,99', 'extrato', '' ],
+  // [ '12/09/2022', 'CEL PAG TIT BANCO 237', '-142,22', 'extrato', '' ],
+  // [ '09/09/2022', 'REND PAGO APLIC AUT MAIS', '0,01', 'extrato', '' ],
+  // [ '09/09/2022', 'DDA PAG TIT', '-630,34', 'extrato', '' ],
+  // [ '08/09/2022', 'PIX TRANSF UESLEI 08/09', '-100,00', 'extrato', '' ],
+  // [ '16/09/2022', 'PIX QRS Nelson Alca16/09', '-35,00', 'extrato', '' ],
+  // [ '19/09/2022', 'FINANC IMOBILIARIO 045', '-4.714,32', 'extrato', '' ],
+  // [ '19/09/2022', 'REND PAGO APLIC AUT APR', '0,01', 'extrato', '' ]
+];
+
+converterDataBRtoUSA = function (dataBrasil) {
+  return "" + dataBrasil.substring(6, 12) + "-" + dataBrasil.substring(3, 5) + "-" + dataBrasil.substring(0, 2);
+}
+
+var tratarLancamentos = function(){
+  console.info("tratando datas e valores dos lançamentos...");
+  for(value of lancamentos) {
+    console.info("tratando... " + value);
+    value[0] = converterDataBRtoUSA(value[0]);
+    value[2] = value[2].replace('.', '').replace(',', '.');
+    value[3] = 'extrato';
+  };
+
+  conectarNoBanco();
+  
+};
+
+var conectarNoBanco = function(){
+  console.info("Conectando ao banco de dados ...");
+  con.connect(function(err) {
+    console.info("Resposta do banco de dados ...");
+    if (err) {
+      console.info("erro" + err.code )
+    }else{
+      console.log("Database connected!");
+
+      bar = new Promise((resolve, reject) => {
+        var contMysql = 0;
+        // twirlTimer();
+
+        lancamentos.forEach((value, index, array) => {
+          var sql = "INSERT INTO lancamentos (vencimento, descricao, valor, origem, categoria  ) VALUES (?)";
+
+          con.query(sql, [value], function (err, result) {
+            
+            if (err) {
+              if(err.code == 'ER_DUP_ENTRY'){
+                console.info("Status: já cadastrado: " + value);
+                contIgnorados++;
+              }else{
+                console.info(err);
+              }
+            }else{
+              cont++;
+              // console.info("Inserido com sucesso");
+              console.info("Inserindo..." + value);
+            }
+            contMysql++;
+
+            // console.info("contMysql", contMysql);
+            // console.info("array.length", array.length);
+            if (contMysql === array.length) resolve();
+          });
+        });
+      });
+
+      bar.then(() => {
+        sumario();
+        // con.end();
+      });
+      
+    }
+  });
+}
+
+var sumario = function(){
+  console.info("Finalizado com sucesso! ");
+  console.info("Novos registros: " + cont);
+  console.info("Registros ignorados: " + contIgnorados);
+};
+
+var twirlTimer = function() {
+  var P = ["\\", "|", "/", "-"];
+  var x = 0;
+  return setInterval(function() {
+    process.stdout.write("\r" + P[x++]);
+    x &= 3;
+  }, 250);
+};
 
 const stepLogin = async (page, options) => {
   // Open homepage and fill account info
@@ -15,38 +132,62 @@ const stepLogin = async (page, options) => {
   await page.type('#agencia', options.branch)
   await page.type('#conta', options.account)
   console.log('Account and branch number has been filled.')
-  await page.waitFor(500)
-  await page.click('#btnLoginSubmit')
+  await page.waitForTimeout(500)
+  await page.click('button.login_button.icon-itaufonts_seta_right')
+
+  if(!!options.name){
+    console.log('Opening account holder page...');
+    await page.waitForTimeout(2000)
+    await stepAwaitRegularLoading(page)
+    await page.waitForSelector('ul.selecao-nome-titular', { visible: true })
+    console.log('Account holder page loaded.')
+
+    const names = await page.$$('ul.selecao-nome-titular a[role="button"]');
+    for (const name of names) {
+      const text = await page.evaluate(element => element.textContent, name);
+      if(text.toUpperCase() == options.name.toUpperCase()){
+        name.click();
+        console.log('Account holder selected.')
+      }
+    }
+  }
+
   console.log('Opening password page...')
+  await page.waitForTimeout(2000)
+  await stepAwaitRegularLoading(page)
+  await page.waitForSelector('div.modulo-login', { visible: true })
+  console.log('Password page loaded.')
 
   // Input password
-  await page.waitFor('div.modulo-login')
-  console.log('Password page loaded.')
   const passwordKeys = await mapPasswordKeys(page)
-  const keyClickOption = { delay: 300 }
-  await page.waitFor(500)
+  await page.waitForTimeout(500)
+
   console.log('Filling account password...')
   for (const digit of options.password.toString()) {
-    await passwordKeys[digit].click(keyClickOption)
+    await page.evaluate((selector) => {
+      document.querySelector(selector).click()
+    }, passwordKeys[digit])
+    await page.waitForTimeout(300)
   }
+
   console.log('Password has been filled...login...')
-  await page.waitFor(500)
-  page.click('#acessar', keyClickOption)
-  await page.waitFor('#sectionHomePessoaFisica')
+  await page.waitForTimeout(1000)
+  page.click('#acessar', { delay: 300 })
+  await page.waitForSelector('#sectionHomePessoaFisica')
   console.log('Logged!')
 }
 
 const stepExport = async (page, options) => {
-  try {
-    
-  
   console.log('Opening statement page...')
-  // Go to extrato page
+  // Go to statement page
   await page.evaluate(() => { document.querySelector('.sub-mnu').style.display = 'block' })
-  await page.waitFor(1000)
+  await page.waitForTimeout(1000)
 
-  //await page.hover('#varejo > header > div.container > nav > ul > li > div > div > div:nth-child(1) > ul:nth-child(1) > li:nth-child(2) > a')
-  //await page.click('#varejo > header > div.container > nav > ul > li > div > div > div:nth-child(1) > ul:nth-child(1) > li:nth-child(2) > a')
+  await page.evaluate(() => {
+    const xpath = '//a[contains(., \'saldo e extrato\')]'
+    const result = document.evaluate(xpath, document, null, XPathResult.ANY_TYPE, null) // eslint-disable-line
+    result.iterateNext().click()
+  })
   console.log('Statement page loaded.')
 
   // Close guide
@@ -54,25 +195,52 @@ const stepExport = async (page, options) => {
   console.log('Statement has been closed')
 
   // Close menu
-  await page.evaluate(() => { document.querySelector('.sub-mnu').style.display = 'none' })
-  await page.waitFor(1000)
+  await page.evaluate(() => { document.querySelector('.sub-mnu').style.display = 'none' }) 
+  await page.waitForTimeout(1000)
   console.log('Menu has been closed')
-
-  // Select transactions tab
-  // await page.click('#btn-aba-lancamentos')
-  // console.log('Selected transactions tab')
-
-  // Select all entries on the filters
-  await page.click('#extrato-filtro-lancamentos .todas-filtro-extrato-pf')
-  console.log('Selected all entries on the filters')
 
   // Select period of days
   await page.select('cpv-select[model=\'pc.periodoSelecionado\'] select', options.days.toString())
   console.log('Selected period of days on the filters')
+  await stepAwaitRegularLoading(page)
 
-  // wait load transactions
-  await page.waitFor(10000)
+  // Sort by most  recent transactions first
+  await page.select('cpv-select[model=\'app.ordenacao\'] select', 'maisRecente')
+  console.log('Sorted by most recent transactions first')
+  await stepAwaitRegularLoading(page)
 
+  // await prepararDownload(page)
+
+  console.log('varrerArvoreLancamentos...')
+  await varrerArvoreLancamentos(page);
+}
+
+const varrerArvoreLancamentos = async (page) => {
+  console.info("Varrendo lista de lançamentos...");
+
+  const data = await page.evaluate(
+    () => Array.from(
+      document.querySelectorAll('#corpoTabela-gridLancamentos-pessoa-fisica > tr'),
+      row => Array.from(row.querySelectorAll('th, td'), cell => cell.innerText)
+    )
+  );
+
+  console.info("Removendo itens desnecessários dos lançamentos...");
+  var newData = data.filter(function (el) {
+    return  el[1] != 'SALDO ANTERIOR' &&
+            el[1] != 'SALDO DO DIA' && 
+            el[1] != 'SDO CTA/APL AUTOMATICAS' &&
+            el[1] != '(-) SALDO A LIBERAR' &&
+            el[1] != 'SALDO FINAL DISPONIVEL' &&
+            el[4] == '';
+  });
+
+  lancamentos = newData;
+
+  tratarLancamentos();
+}
+
+const prepararDownload = async (page) => {
   // configure Download Trigger
   let triggerDownload = (fileFormat) => { exportarExtratoArquivo('formExportarExtrato', fileFormat) }// eslint-disable-line
   if (options.file_format === 'pdf') {
@@ -81,33 +249,33 @@ const stepExport = async (page, options) => {
 
   const finalFilePath = path.resolve(
     options.download.path,
-    options.download.filename.interpolate({
+    options.download.filename.interpolate({  
       days: options.days,
       timestamp: moment().unix()
     })
   )
 
   console.log('Starting download...')
-  const finalFilePathWithExtension = download(page, triggerDownload, finalFilePath, options)
+  const finalFilePathWithExtension = await download(page, triggerDownload, finalFilePath, options)
   console.log('Download has been finished.')
   console.log('Export document final path: ', finalFilePathWithExtension)
-  } catch (error) {
-   console.error("OPS");   
-  }
+}
+
+const stepAwaitRegularLoading = async (page) => {
+  await page.waitForSelector('div.loading-nova-internet', { visible: true, timeout: 3000 })
+  await page.waitForSelector('div.loading-nova-internet', { hidden: true })
 }
 
 const stepCloseStatementGuide = async (page) => {
-  await page.waitForSelector('.close-btn-H2O', { timeout: 4000 })
-    .then(() => page.click('.close-btn-H2O')) // eslint-disable-line
+  await page.waitForSelector('.feature-discovery-extrato button.hopscotch-cta', { timeout: 4000 })
+    .then(() => page.click('.feature-discovery-extrato button.hopscotch-cta')) // eslint-disable-line
     .catch(() => {})
 }
 
 const stepClosePossiblePopup = async (page) => {
-  await page.waitForSelector('.close-btn-H2O', { timeout: 4000 })
+  await page.waitForSelector('div.mfp-wrap', { timeout: 4000 })
     .then(() => page.evaluate(() => popFechar())) // eslint-disable-line
-    .catch(() => {
-      console.error("erro ")
-    })
+    .catch(() => {})
 }
 
 const mapPasswordKeys = async (page) => {
@@ -117,9 +285,11 @@ const mapPasswordKeys = async (page) => {
   for (const key of keys) {
     const text = await page.evaluate(element => element.textContent, key)
     if (text.includes('ou')) {
+      const rel = await page.evaluate(element => element.getAttribute('rel'), key)
+      const selectorToClick = `a[rel="${rel}"]`
       const digits = text.split('ou').map(digit => digit.trim())
-      keyMapped[digits[0]] = key
-      keyMapped[digits[1]] = key
+      keyMapped[digits[0]] = selectorToClick
+      keyMapped[digits[1]] = selectorToClick
     }
   }
 
@@ -154,92 +324,11 @@ const waitForFileToDownload = async (downloadPath) => {
   console.log('Waiting to download file...')
   let filename
   while (!filename || filename.endsWith('.crdownload')) {
+    console.log('Waiting to download file.... ')
     filename = fs.readdirSync(downloadPath)[0]
     await sleep(500)
   }
   return filename
-}
-
-const passoExtra = async( page ) => {
-  // await page.waitFor('#input-busca')
-  // page.type('#input-busca', "fatura");
-  // page.type('#input-busca', "fatura");
-  // page.type('#input-busca', "fatura");
-  // page.type('#input-busca', "fatura");
-  // page.type('#input-busca', "fatura");
-  
-  // var seletor = "#cartao-card-accordion";
-  // var seletor = ".close-btn-H20";
-  
-  //chama funcao que fechao modal
-  var seletor = "#overlayPopupH2OID";
-  await page.waitForSelector(seletor, { timeout: 4000 })
-    .then(() => page.evaluate(() => window.top._closeModalH2o('/21672839401/PF_HOME_POPUP_02'))) // eslint-disable-line
-    .catch(() => {
-      console.error("erro ")
-    })
-  
-  var seletor = "#input-busca";
-  await page.waitForSelector(seletor, { timeout: 4000 })
-    .then(() => {
-      // page.type('#input-busca', "fatura");
-      // page.waitFor(1000);
-      // page.type('#input-busca', "fatura2");
-      page.evaluate(() => barraBuscaController.iniciarCartaoRapido());
-
-      seletor = ".cartoes.clear";
-      page.waitForSelector(seletor, { timeout: 4000 })
-      .then(async () => {
-        console.info("encontrou o seletor: " + seletor);
-        await page.waitFor(1000);
-
-        page.click(seletor);
-      }) // eslint-disable-line
-      .catch(() => {
-        console.error("erro ")
-      })  
-
-    })
-    .catch(() => {
-      console.error("erro ")
-    })
-
-    
-
-    
-  // 
-
-  //menu
-  // seletor = ".btn-nav btn-menu";
-  // await page.waitForSelector(seletor, { timeout: 8000 })
-  //   .then(() => page.click(seletor)) // eslint-disable-line
-  //   .catch((e) => {
-  //     console.error("erro " + e)
-  //   })
-
-  //sub menu
-  // seletor = "#person > header > div.container > nav > ul > li > div > div > div:nth-child(2) > ul:nth-child(2) > li:nth-child(2) > a";
-  // await page.waitForSelector(seletor, { timeout: 8000 })
-  //   .then(() => page.click(seletor)) // eslint-disable-line
-  //   .catch((e) => {
-  //     console.error("erro " + e)
-  //   })
-
-    
-
-  
-
-  // for (let cont = 0; cont < 20; cont++) {
-    // await page.waitFor(1000)
-    // console.info("encontrou o seletor: " + seletor);
-    // console.info("iteracao: " + cont);
-    // page.click(seletor);
-
-    
-    //call JS
-    //window.top._closeModalH2o('/21672839401/PF_HOME_POPUP_02')
-  // }
-
 }
 
 const scraper = async (options) => {
@@ -256,13 +345,15 @@ const scraper = async (options) => {
   console.debug('Viewport - options', options.viewport)
   page.setViewport(options.viewport)
 
-  await stepLogin(page, options)
+  if(options.env.test){
+    tratarLancamentos(); 
+  }else{
+    await stepLogin(page, options)
+    await stepClosePossiblePopup(page)
+    await stepExport(page, options)
+    await browser.close()
+  }
 
-  await passoExtra(page);
-  //await stepClosePossiblePopup(page)
-  //await stepExport(page, options)
-
-  //await browser.close()
 
   console.log('Itaú scraper finished.')
 }

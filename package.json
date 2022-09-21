@@ -4,20 +4,21 @@
   "description": "puppeteer itau scraper",
   "main": "run.js",
   "scripts": {
-    "test": "standard",
-    "go": "node run.js --branch=7071 --account=10291-2 --password=132435 --days 5"
+    "test": "standard"
   },
-  "author": "Vinicius Gava <gava.vinicius@gmail.com>",
+  "author": "Vinicius Gava",
   "license": "MIT",
   "dependencies": {
-    "fs-extra": "^8.1.0",
-    "moment": "^2.24.0",
-    "nconf": "^0.10.0",
-    "puppeteer": "^2.0.0",
-    "uuid": "^3.3.3",
-    "yargs": "^14.2.0"
+    "fs-extra": "^10.0.0",
+    "mkdirp": "^1.0.4",
+    "moment": "^2.29.2",
+    "mysql": "^2.18.1",
+    "nconf": "^0.11.4",
+    "puppeteer": "^13.1.2",
+    "uuid": "^8.3.2",
+    "yargs": "^17.3.1"
   },
   "devDependencies": {
-    "standard": "^14.3.1"
+    "standard": "^16.0.4"
   }
 }
