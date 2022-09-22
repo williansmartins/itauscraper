@@ -74,7 +74,7 @@ var conectarNoBanco = function(){
         // twirlTimer();
 
         lancamentos.forEach((value, index, array) => {
-          var sql = "INSERT INTO lancamentos (vencimento, descricao, valor, origem, categoria  ) VALUES (?)";
+          var sql = "INSERT INTO lancamentos (data, titulo, valor, origem, categoria) VALUES (?)";
 
           con.query(sql, [value], function (err, result) {
             
@@ -109,9 +109,9 @@ var conectarNoBanco = function(){
 }
 
 var sumario = function(){
-  console.info("Finalizado com sucesso! ");
   console.info("Novos registros: " + cont);
   console.info("Registros ignorados: " + contIgnorados);
+  console.info("Finalizado com sucesso! ");
 };
 
 var twirlTimer = function() {
@@ -231,7 +231,7 @@ const varrerArvoreLancamentos = async (page) => {
             el[1] != 'SALDO DO DIA' && 
             el[1] != 'SDO CTA/APL AUTOMATICAS' &&
             el[1] != '(-) SALDO A LIBERAR' &&
-            el[1] != 'SALDO FINAL DISPONIVEL' &&
+            el[1] != 'SALDO FINAL DISPONIVEL' && 
             el[4] == '';
   });
 
@@ -352,10 +352,10 @@ const scraper = async (options) => {
     await stepClosePossiblePopup(page)
     await stepExport(page, options)
     await browser.close()
+    console.log('Itaú scraper finished.')
   }
 
 
-  console.log('Itaú scraper finished.')
 }
 
 /* eslint-disable */
