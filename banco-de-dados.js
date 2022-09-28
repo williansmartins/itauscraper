@@ -1,21 +1,25 @@
 var conector = require("mysql");
 
 var conexao = conector.createConnection({
-    host: "localhost",
-    user: "root",
-    password: "",
-    database: "financeiro"
+    host: "pwms.com.br",
+    user: "controlei-user",
+    password: "controlei-user-123",
+    database: "controlei"
 });
 
-exports.conectar = function (dataString, descricao, valor) {
+exports.conectar = function (dataString, titulo, valor) {
     conexao.connect(callback);
 };
 
-exports.salvar = function (dataString, descricao, valor, cartao) {
-    var sql = "INSERT INTO tb_lancamentos_cartao_credito VALUES (null, '"+dataString+"', '"+descricao+"', "+valor+", '"+cartao+"')";
-    conexao.query(sql, function (erro, resultado) {
-        if (erro) { 
-            console.error(erro);
+exports.salvar = function (dataString, titulo, valor, cartao) {
+    var sql = "INSERT INTO tb_lancamentos_cartao_credito (data, titulo, valor, cartao, created_at) VALUES ('"+dataString+"', '"+titulo+"', "+valor+", '"+cartao+"', NOW())";
+    conexao.query(sql, function (err, resultado) {
+        if (err) { 
+            if(err.code == 'ER_DUP_ENTRY'){
+                console.info("Status: já cadastrado: " + titulo);
+              }else{
+                console.info(err);
+              }
         }else{
             console.log("Inserido com sucesso: " + resultado.insertId);
             // console.log(resultado); 

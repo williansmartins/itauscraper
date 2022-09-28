@@ -18,7 +18,7 @@ const stepLogin = async (page, options) => {
   await page.type('#conta', options.account)
   console.log('Account and branch number has been filled.')
   await page.waitForTimeout(500)
-  await page.click('#btnLoginSubmit')
+  await page.click('button.login_button.icon-itaufonts_seta_right')
   console.log('Opening password page...')
 
   // Input password
@@ -57,35 +57,19 @@ const stepFatura = async (page, options) => {
   console.log('fechando menu...')
   await page.evaluate(() => { document.querySelector('.sub-mnu').style.display = 'none' })
 
-  //pegando os lançamentos no cartao1
-  // await page.evaluate(() => { 
-  //   const trs = Array.from(document.querySelectorAll("table[summary='lançamentos nacionais titular WILLIANS MARTINS DE MORAES - final 9457'] tr.linha-valor-total"))
-  //   console.info("Encontrei " + trs.length + " lançamentos.")
-  // })
   await page.waitForTimeout(3000)
   console.log('buscando lista de lançamentos...')
-  
-  // const rows = await page.$$("table[summary='lançamentos nacionais titular WILLIANS MARTINS DE MORAES - final 9457'] tr.linha-valor-total");
-  
-  
-  
-  // for (let i = 0; i < rows.length; i++) {
-    //   // const element = await (await elementos[i].getProperty('innerText')).jsonValue();
-    //   // console.log(element);
-    //   Array.from(rows, row => {
-      //     const columns = row.querySelectorAll('td');
-      //     return Array.from(columns, column => column.innerText);
-      //   });
-      //   var data = element
-      // }
       
   await page.waitForTimeout(3000)
   
   const result = await page.evaluate( function(options){
-    // console.log(">>>" + options);
-    var seletor = "table[summary*='"+options.cartao_numero+"'] tr.linha-valor-total";
-    // var seletor = "table[summary='lançamentos nacionais adicional NAYARA M DOMINGUES - final 5020'] tr.linha-valor-total";
-
+    // CARTOES
+    //lançamentos nacionais adicional NAYARA M DOMINGUES - final 5020
+    // var seletor = "table[summary*='"+options.cartao_numero+"'] tr.linha-valor-total";
+    
+    //ENCARGOS
+    //lançamentos encargos e serviços
+    var seletor = "table[summary*='lançamentos encargos e serviços'] tr";
     
     const rows = document.querySelectorAll(seletor);
     console.log("Encontrei " + rows.length + " rows")
@@ -119,21 +103,42 @@ const stepFatura = async (page, options) => {
   }, options);
   
   console.log("Encontrei " + result.length + " lançamentos.")
+
+  await stepStore(result, options);
+}
+
+const stepStore = async (result, options) => {
   db.conectar();
+  // bar = new Promise((resolve, reject) => {
+  //   var contMysql = 0;
+    for (let index = 0; index < result.length; index++) {
+      let descricao = '';
+      let valor = 0;
+      let data = null;
 
-  for (let index = 0; index < result.length; index++) {
-    let data = result[index][0];
-    let descricao = result[index][1];
-    var valor = result[index][2].replace('.', '').replace(',', '.');
+      console.log(result);
 
-    console.log(utils.dataExtensaParaBancoDeDados(data)); 
-    console.log(descricao);
-    console.log(valor);
-    console.log("---"); 
+      if(result[index][1]){
+        descricao = result[index][1].replace('\'', '');
+      }
 
-    
-    db.salvar(utils.dataExtensaParaBancoDeDados(data), descricao, valor, options.cartao_numero);
-  }
+      if(result[index][2]){
+        valor = result[index][2].replace('.', '').replace(',', '.');
+      }
+
+      if(result[index][0]){
+        data = utils.dataExtensaParaBancoDeDados(result[index][0]);
+      }
+
+      console.log(data); 
+      console.log(descricao);
+      console.log(valor);
+      console.log("---"); 
+
+      if(data != undefined || data != null){
+        db.salvar(data, descricao, valor, options.cartao_numero);
+      }
+    }
 }
 
 const stepExport = async (page, options) => {
