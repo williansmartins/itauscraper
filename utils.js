@@ -8,11 +8,11 @@ exports.dataExtensaParaBancoDeDados = function (string) {
     return data;
 };
 
-//R$ -> 2022-01-08
-exports.dataExtensaParaBancoDeDados = function (string) {
+//'26/10/22' -> 2022-10-26
+exports.datadataBRtoDatabase = function (string) {
     var dia = string.substring(0, 2);
-    var mes = mesStringToNumber(string.substring(5, 8));
-    var ano = new Date().getFullYear();
+    var mes = string.substring(3, 5);
+    var ano = string.substring(6, 8);
 
     var data = ano + "-" + mes.toString().padStart(2, '0') + "-" + dia;
     return data;

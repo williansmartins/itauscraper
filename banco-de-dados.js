@@ -11,12 +11,12 @@ exports.conectar = function (dataString, titulo, valor) {
     conexao.connect(callback);
 };
 
-exports.salvar = function (dataString, titulo, valor, cartao) {
-    var sql = "INSERT INTO tb_lancamentos_cartao_credito (data, titulo, valor, cartao, created_at) VALUES ('"+dataString+"', '"+titulo+"', "+valor+", '"+cartao+"', NOW())";
+exports.salvar = function (dataString, titulo, valor, cartao, vencimento) {
+    var sql = "INSERT INTO tb_lancamentos_cartao_credito (data, titulo, valor, cartao, created_at, vencimento) VALUES ('"+dataString+"', '"+titulo+"', "+valor+", '"+cartao+"', NOW(), '"+vencimento+"')";
     conexao.query(sql, function (err, resultado) {
         if (err) { 
             if(err.code == 'ER_DUP_ENTRY'){
-                console.info("Status: já cadastrado: " + titulo);
+                console.info("Status: já cadastrado: " + titulo + " data: " + dataString + " valor: " + valor + "-" + err);
               }else{
                 console.info(err);
               }

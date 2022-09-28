@@ -14,5 +14,8 @@
   "download": {
     "path": "./download",
     "filename": "ITAU_${days}_days_before_${timestamp}"
+  },
+  "env": {
+    "test": false
   }
 }

@@ -65,21 +65,18 @@ const stepFatura = async (page, options) => {
   const result = await page.evaluate( function(options){
     // CARTOES
     //lançamentos nacionais adicional NAYARA M DOMINGUES - final 5020
-    // var seletor = "table[summary*='"+options.cartao_numero+"'] tr.linha-valor-total";
+    var seletor = "table[summary*='"+options.cartao_numero+"'] tr.linha-valor-total"; 
     
     //ENCARGOS
     //lançamentos encargos e serviços
-    var seletor = "table[summary*='lançamentos encargos e serviços'] tr";
+    // var seletor = "table[summary*='lançamentos encargos e serviços'] tr";
     
     const rows = document.querySelectorAll(seletor);
-    console.log("Encontrei " + rows.length + " rows")
     
     
     return Array.from(rows, row => {
       const columns = row.querySelectorAll('td');
       return Array.from(columns, column => {
-        // console.log(">>>");
-        // console.log(column);
 
         var spans = column.querySelectorAll('span');
         console.log(">>>" + spans.length);
@@ -104,10 +101,19 @@ const stepFatura = async (page, options) => {
   
   console.log("Encontrei " + result.length + " lançamentos.")
 
-  await stepStore(result, options);
+  //vencimento
+  let vencimento = await page.evaluate(() => {
+    const seletorVencimento = ".c-category-status__venc .c-category-status__value";
+    let result = document.querySelector(seletorVencimento);
+    return result.innerHTML;
+  })
+
+  console.log("vencimento-2 ");
+  console.log(vencimento);
+  await stepStore(result, options, vencimento);
 }
 
-const stepStore = async (result, options) => {
+const stepStore = async (result, options, vencimento) => {
   db.conectar();
   // bar = new Promise((resolve, reject) => {
   //   var contMysql = 0;
@@ -115,8 +121,7 @@ const stepStore = async (result, options) => {
       let descricao = '';
       let valor = 0;
       let data = null;
-
-      console.log(result);
+      let vencimentoDB = null;
 
       if(result[index][1]){
         descricao = result[index][1].replace('\'', '');
@@ -130,13 +135,18 @@ const stepStore = async (result, options) => {
         data = utils.dataExtensaParaBancoDeDados(result[index][0]);
       }
 
+      if(vencimento){
+        vencimentoDB = utils.datadataBRtoDatabase(vencimento);
+      }
+
       console.log(data); 
       console.log(descricao);
       console.log(valor);
+      console.log(vencimentoDB);
       console.log("---"); 
 
       if(data != undefined || data != null){
-        db.salvar(data, descricao, valor, options.cartao_numero);
+        db.salvar(data, descricao, valor, options.cartao_numero, vencimentoDB); 
       }
     }
 }
