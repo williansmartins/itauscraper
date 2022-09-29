@@ -12,7 +12,7 @@ exports.conectar = function (dataString, titulo, valor) {
 };
 
 exports.salvar = function (dataString, titulo, valor, cartao, vencimento) {
-    var sql = "INSERT INTO tb_lancamentos_cartao_credito (data, titulo, valor, cartao, created_at, vencimento) VALUES ('"+dataString+"', '"+titulo+"', "+valor+", '"+cartao+"', NOW(), '"+vencimento+"')";
+    var sql = "INSERT INTO tb_lancamentos_cartao_credito (data, titulo, valor, cartao, created_at, vencimento, responsavel) VALUES ('"+dataString+"', '"+titulo+"', "+valor+", '"+cartao+"', NOW(), '"+vencimento+"', '-')";
     conexao.query(sql, function (err, resultado) {
         if (err) { 
             if(err.code == 'ER_DUP_ENTRY'){
