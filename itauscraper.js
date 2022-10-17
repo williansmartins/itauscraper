@@ -47,7 +47,8 @@ const stepFatura = async (page, options) => {
 
   //clicar no meu fatura
   await page.evaluate(() => {
-    const xpath = "//*[@id='person']/header/div[3]/nav/ul/li/div/div/div[1]/ul[7]/li[2]/a";
+    // const xpath = "//*[@id='person']/header/div[3]/nav/ul/li/div/div/div[2]/ul[7]/li[2]/a";
+    const xpath = '//a[contains(., \'fatura e limite\')]'
                    
     const result = document.evaluate(xpath, document, null, XPathResult.ANY_TYPE, null) // eslint-disable-line
     result.iterateNext().click()

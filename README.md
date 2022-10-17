@@ -10,7 +10,7 @@ Available file formats:
 
 ## Usage
 ```bash
-node run.js --branch=0000 --account=00000-0 --password=000000 --days 5 
+node run.js --branch=0000 --account=00000-0 --password=000000 --days 30 --cartao_numero=5020
 ```
 
 ## Usage - Docker
