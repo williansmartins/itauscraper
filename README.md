@@ -91,3 +91,20 @@ You can generate a different crontab config on [https://crontab-generator.org](h
 ## Links
 - [GitHub](https://github.com/viniciusgava/itauscraper)
 - [Docker Hub](https://hub.docker.com/r/viniciusgava/itauscraper) 
+
+## Contar lançamentos 
+### via JQUERY
+TODOS Lançamentos
+```
+todos
+$(".fatura__table .linha-valor-total").length
+
+somente 9457
+$(".fatura__tipo:nth-child(2)").find(".fatura__table .linha-valor-total").length
+```
+
+### via SQL
+```
+select * from tb_lancamentos_cartao_credito tlcc 
+where vencimento = '2022-11-26'	
+```
