@@ -101,10 +101,21 @@ $(".fatura__table .linha-valor-total").length
 
 somente 9457
 $(".fatura__tipo:nth-child(2)").find(".fatura__table .linha-valor-total").length
+
+somente 5020
+$(".fatura__tipo:nth-child(3)").find(".fatura__table .linha-valor-total").length
 ```
 
 ### via SQL
 ```
 select * from tb_lancamentos_cartao_credito tlcc 
 where vencimento = '2022-11-26'	
+```
+
+## Total da fatura
+```
+select sum(valor) 
+from tb_lancamentos_cartao_credito tlcc 
+where 
+	vencimento = '2022-11-26'
 ```
