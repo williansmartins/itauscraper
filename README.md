@@ -119,3 +119,9 @@ from tb_lancamentos_cartao_credito tlcc
 where 
 	vencimento = '2022-11-26'
 ```
+output:
+```
+2760.96
+```
+
+
